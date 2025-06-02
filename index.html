@@ -114,7 +114,11 @@
         // Listen for changes and render list in real-time
         listRef.on("value", snapshot => {
             const data = snapshot.val() || {};
-            window.list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            window.list = Object.keys(data).map(key => ({
+                id: key,
+                ...data[key],
+                votes: Array.isArray(data[key]?.votes) ? data[key].votes : []
+            }));
             renderList();
         });
 
@@ -188,6 +192,7 @@
             const listElement = document.getElementById("list");
             listElement.innerHTML = "";
             (window.list || []).forEach((item, index) => {
+                const votesArr = Array.isArray(item.votes) ? item.votes : [];
                 const listItem = document.createElement("li");
                 listItem.classList.add("list-item");
                 listItem.innerHTML = `
@@ -198,7 +203,7 @@
                         <button onclick="removeVote(${index})">❌ Remove Vote</button>
                         <button onclick="removeItem(${index})">🗑️ Delete Item</button>
                     </div>
-                    <span class="votes">Votes: ${item.votes.join(", ")}</span>
+                    <span class="votes">Votes: ${votesArr.join(", ")}</span>
                 `;
                 listElement.appendChild(listItem);
             });
