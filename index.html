@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voting List (Firebase)</title>
+    <title>Movies List</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', monospace;
             background-color: #121212;
             color: #fff;
             margin: 0;
@@ -16,8 +16,8 @@
             min-height: 100vh;
         }
         .container {
-            width: 80%;
-            max-width: 900px;
+            width: 90%;
+            max-width: 1200px;
             border: 2px solid #444;
             background-color: #222;
             padding: 20px;
@@ -33,7 +33,7 @@
         input {
             background-color: #333;
             color: #fff;
-            width: 100%;
+            width: 60%;
         }
         button {
             background-color: #007bff;
@@ -51,7 +51,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
+            width: 98%;
             border: 1px solid #444;
             background-color: #333;
             padding: 10px;
@@ -76,8 +76,8 @@
 </head>
 <body>
     <div class="container">
-        <h2>Voting List (Firebase)</h2>
-        <input type="text" id="itemInput" placeholder="Enter item" />
+        <h2>Enter a Movie Title</h2>
+        <input type="text" id="itemInput" placeholder="Movie title" />
         <button onclick="addItem()">Add Item</button>
 
         <h3>Enter Your Name to Vote or Remove a Vote:</h3>
