@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Voting List</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #121212;
+                color: #fff;
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+            .container {
+                width: 80%;
+                max-width: 900px;
+                border: 2px solid #444;
+                background-color: #222;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            }
+            input,
+            button {
+                padding: 8px;
+                margin: 5px;
+                border: none;
+                border-radius: 5px;
+            }
+            input {
+                background-color: #333;
+                color: #fff;
+                width: 100%;
+            }
+            button {
+                background-color: #007bff;
+                color: #fff;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #0056b3;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+            .list-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                border: 1px solid #444;
+                background-color: #333;
+                padding: 10px;
+                margin: 5px 0;
+                border-radius: 5px;
+            }
+            .item-name {
+                flex: 1;
+                min-width: 200px;
+            }
+            .votes {
+                width: 200px;
+                text-align: right;
+                font-size: 0.9em;
+                color: #bbb;
+            }
+            .buttons {
+                display: flex;
+                gap: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Voting List</h2>
+            <input type="text" id="itemInput" placeholder="Enter item" />
+            <button onclick="addItem()">Add Item</button>
+
+            <h3>Enter Your Name to Vote or Remove a Vote:</h3>
+            <input type="text" id="voterName" placeholder="Enter your name" />
+
+            <ul id="list"></ul>
+        </div>
+
+        <script>
+            let list = JSON.parse(localStorage.getItem("votingList")) || [];
+
+            function saveList() {
+                localStorage.setItem("votingList", JSON.stringify(list));
+            }
+
+            function addItem() {
+                const itemInput = document
+                    .getElementById("itemInput")
+                    .value.trim();
+                if (itemInput !== "") {
+                    list.push({ name: itemInput, votes: [] });
+                    saveList();
+                    renderList();
+                    document.getElementById("itemInput").value = "";
+                }
+            }
+
+            function vote(index, direction) {
+                const voterName = document
+                    .getElementById("voterName")
+                    .value.trim();
+                if (voterName === "") {
+                    alert("Please enter your name to vote.");
+                    return;
+                }
+
+                if (!list[index].votes.includes(voterName)) {
+                    list[index].votes.push(voterName);
+                    if (direction === "up" && index > 0) {
+                        [list[index], list[index - 1]] = [
+                            list[index - 1],
+                            list[index],
+                        ];
+                    } else if (
+                        direction === "down" &&
+                        index < list.length - 1
+                    ) {
+                        [list[index], list[index + 1]] = [
+                            list[index + 1],
+                            list[index],
+                        ];
+                    }
+                    saveList();
+                    renderList();
+                } else {
+                    alert("You have already voted for this item.");
+                }
+            }
+
+            function removeVote(index) {
+                const voterName = document
+                    .getElementById("voterName")
+                    .value.trim();
+                if (voterName === "") {
+                    alert("Please enter your name to remove your vote.");
+                    return;
+                }
+
+                let voteIndex = list[index].votes.indexOf(voterName);
+                if (voteIndex !== -1) {
+                    list[index].votes.splice(voteIndex, 1);
+                    saveList();
+                    renderList();
+                } else {
+                    alert("You haven't voted for this item.");
+                }
+            }
+
+            function removeItem(index) {
+                list.splice(index, 1);
+                saveList();
+                renderList();
+            }
+
+            function renderList() {
+                const listElement = document.getElementById("list");
+                listElement.innerHTML = "";
+                list.forEach((item, index) => {
+                    const listItem = document.createElement("li");
+                    listItem.classList.add("list-item");
+                    listItem.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <div class="buttons">
+                        <button onclick="vote(${index}, 'up')">⬆️</button>
+                        <button onclick="vote(${index}, 'down')">⬇️</button>
+                        <button onclick="removeVote(${index})">❌ Remove Vote</button>
+                        <button onclick="removeItem(${index})">🗑️ Delete Item</button>
+                    </div>
+                    <span class="votes">Votes: ${item.votes.join(", ")}</span>
+                `;
+                    listElement.appendChild(listItem);
+                });
+            }
+
+            window.onload = renderList;
+        </script>
+    </body>
+</html>
