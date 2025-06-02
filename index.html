@@ -1,175 +1,196 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Voting List</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #121212;
-                color: #fff;
-                margin: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-            }
-            .container {
-                width: 80%;
-                max-width: 900px;
-                border: 2px solid #444;
-                background-color: #222;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-            }
-            input,
-            button {
-                padding: 8px;
-                margin: 5px;
-                border: none;
-                border-radius: 5px;
-            }
-            input {
-                background-color: #333;
-                color: #fff;
-                width: 100%;
-            }
-            button {
-                background-color: #007bff;
-                color: #fff;
-                cursor: pointer;
-            }
-            button:hover {
-                background-color: #0056b3;
-            }
-            ul {
-                list-style: none;
-                padding: 0;
-            }
-            .list-item {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                width: 100%;
-                border: 1px solid #444;
-                background-color: #333;
-                padding: 10px;
-                margin: 5px 0;
-                border-radius: 5px;
-            }
-            .item-name {
-                flex: 1;
-                min-width: 200px;
-            }
-            .votes {
-                width: 200px;
-                text-align: right;
-                font-size: 0.9em;
-                color: #bbb;
-            }
-            .buttons {
-                display: flex;
-                gap: 10px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Voting List</h2>
-            <input type="text" id="itemInput" placeholder="Enter item" />
-            <button onclick="addItem()">Add Item</button>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voting List (Firebase)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 80%;
+            max-width: 900px;
+            border: 2px solid #444;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background-color: #333;
+            color: #fff;
+            width: 100%;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border: 1px solid #444;
+            background-color: #333;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .item-name {
+            flex: 1;
+            min-width: 200px;
+        }
+        .votes {
+            width: 200px;
+            text-align: right;
+            font-size: 0.9em;
+            color: #bbb;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Voting List (Firebase)</h2>
+        <input type="text" id="itemInput" placeholder="Enter item" />
+        <button onclick="addItem()">Add Item</button>
 
-            <h3>Enter Your Name to Vote or Remove a Vote:</h3>
-            <input type="text" id="voterName" placeholder="Enter your name" />
+        <h3>Enter Your Name to Vote or Remove a Vote:</h3>
+        <input type="text" id="voterName" placeholder="Enter your name" />
 
-            <ul id="list"></ul>
-        </div>
+        <ul id="list"></ul>
+    </div>
 
-        <script>
-            let list = JSON.parse(localStorage.getItem("votingList")) || [];
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        // 1. REPLACE THIS WITH YOUR OWN CONFIG FROM FIREBASE CONSOLE!
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEgaFv4qZeBXVB85ZMlRqv4Y_Pf7rs7-0",
+            authDomain: "jt-movie-list.firebaseapp.com",
+            databaseURL: "https://jt-movie-list-default-rtdb.firebaseio.com",
+            projectId: "jt-movie-list",
+            storageBucket: "jt-movie-list.firebasestorage.app",
+            messagingSenderId: "89183355710",
+            appId: "1:89183355710:web:5a9408f77178df6993226f",
+            measurementId: "G-PSVRJNL27J"
+        };
 
-            function saveList() {
-                localStorage.setItem("votingList", JSON.stringify(list));
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const listRef = db.ref("votingList");
+
+        // Utility to get a unique key for a new item
+        function getNewKey() {
+            return listRef.push().key;
+        }
+
+        // Listen for changes and render list in real-time
+        listRef.on("value", snapshot => {
+            const data = snapshot.val() || {};
+            window.list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            renderList();
+        });
+
+        function addItem() {
+            const itemInput = document.getElementById("itemInput").value.trim();
+            if (itemInput !== "") {
+                const newKey = getNewKey();
+                listRef.child(newKey).set({
+                    name: itemInput,
+                    votes: []
+                });
+                document.getElementById("itemInput").value = "";
             }
+        }
 
-            function addItem() {
-                const itemInput = document
-                    .getElementById("itemInput")
-                    .value.trim();
-                if (itemInput !== "") {
-                    list.push({ name: itemInput, votes: [] });
-                    saveList();
-                    renderList();
-                    document.getElementById("itemInput").value = "";
+        function vote(index, direction) {
+            const voterName = document.getElementById("voterName").value.trim();
+            if (voterName === "") {
+                alert("Please enter your name to vote.");
+                return;
+            }
+            const item = window.list[index];
+            if (!item.votes.includes(voterName)) {
+                const newVotes = [...item.votes, voterName];
+                // Move item up or down in the list, if needed
+                let updates = {};
+                // Get the list as an array
+                let arr = window.list.slice();
+                let pos = index;
+                if (direction === "up" && pos > 0) {
+                    [arr[pos], arr[pos - 1]] = [arr[pos - 1], arr[pos]];
                 }
-            }
-
-            function vote(index, direction) {
-                const voterName = document
-                    .getElementById("voterName")
-                    .value.trim();
-                if (voterName === "") {
-                    alert("Please enter your name to vote.");
-                    return;
+                if (direction === "down" && pos < arr.length - 1) {
+                    [arr[pos], arr[pos + 1]] = [arr[pos + 1], arr[pos]];
                 }
-
-                if (!list[index].votes.includes(voterName)) {
-                    list[index].votes.push(voterName);
-                    if (direction === "up" && index > 0) {
-                        [list[index], list[index - 1]] = [
-                            list[index - 1],
-                            list[index],
-                        ];
-                    } else if (
-                        direction === "down" &&
-                        index < list.length - 1
-                    ) {
-                        [list[index], list[index + 1]] = [
-                            list[index + 1],
-                            list[index],
-                        ];
-                    }
-                    saveList();
-                    renderList();
-                } else {
-                    alert("You have already voted for this item.");
-                }
+                // Update votes for the item
+                arr[pos].votes = newVotes;
+                // Bulk update all items to preserve new order
+                arr.forEach(itemObj => {
+                    updates[itemObj.id] = { name: itemObj.name, votes: itemObj.votes };
+                });
+                listRef.set(updates);
+            } else {
+                alert("You have already voted for this item.");
             }
+        }
 
-            function removeVote(index) {
-                const voterName = document
-                    .getElementById("voterName")
-                    .value.trim();
-                if (voterName === "") {
-                    alert("Please enter your name to remove your vote.");
-                    return;
-                }
-
-                let voteIndex = list[index].votes.indexOf(voterName);
-                if (voteIndex !== -1) {
-                    list[index].votes.splice(voteIndex, 1);
-                    saveList();
-                    renderList();
-                } else {
-                    alert("You haven't voted for this item.");
-                }
+        function removeVote(index) {
+            const voterName = document.getElementById("voterName").value.trim();
+            if (voterName === "") {
+                alert("Please enter your name to remove your vote.");
+                return;
             }
-
-            function removeItem(index) {
-                list.splice(index, 1);
-                saveList();
-                renderList();
+            const item = window.list[index];
+            if (item.votes.includes(voterName)) {
+                const newVotes = item.votes.filter(v => v !== voterName);
+                listRef.child(item.id).update({ votes: newVotes });
+            } else {
+                alert("You haven't voted for this item.");
             }
+        }
 
-            function renderList() {
-                const listElement = document.getElementById("list");
-                listElement.innerHTML = "";
-                list.forEach((item, index) => {
-                    const listItem = document.createElement("li");
-                    listItem.classList.add("list-item");
-                    listItem.innerHTML = `
+        function removeItem(index) {
+            const item = window.list[index];
+            if (confirm('Delete this item?')) {
+                listRef.child(item.id).remove();
+            }
+        }
+
+        function renderList() {
+            const listElement = document.getElementById("list");
+            listElement.innerHTML = "";
+            (window.list || []).forEach((item, index) => {
+                const listItem = document.createElement("li");
+                listItem.classList.add("list-item");
+                listItem.innerHTML = `
                     <span class="item-name">${item.name}</span>
                     <div class="buttons">
                         <button onclick="vote(${index}, 'up')">⬆️</button>
@@ -179,11 +200,13 @@
                     </div>
                     <span class="votes">Votes: ${item.votes.join(", ")}</span>
                 `;
-                    listElement.appendChild(listItem);
-                });
-            }
+                listElement.appendChild(listItem);
+            });
+        }
 
-            window.onload = renderList;
-        </script>
-    </body>
+        window.onload = function() {
+            // Nothing needed, list auto-refreshes via Firebase
+        };
+    </script>
+</body>
 </html>
