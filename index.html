@@ -90,6 +90,9 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- Optionally include Auth SDK for sign-in, but not required for this snippet -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script> -->
+
     <script>
         // 1. REPLACE THIS WITH YOUR OWN CONFIG FROM FIREBASE CONSOLE!
         const firebaseConfig = {
@@ -135,7 +138,7 @@
             }
         }
 
-        function vote(index, direction) {
+        function vote(index) {
             const voterName = document.getElementById("voterName").value.trim();
             if (voterName === "") {
                 alert("Please enter your name to vote.");
@@ -144,24 +147,8 @@
             const item = window.list[index];
             if (!item.votes.includes(voterName)) {
                 const newVotes = [...item.votes, voterName];
-                // Move item up or down in the list, if needed
-                let updates = {};
-                // Get the list as an array
-                let arr = window.list.slice();
-                let pos = index;
-                if (direction === "up" && pos > 0) {
-                    [arr[pos], arr[pos - 1]] = [arr[pos - 1], arr[pos]];
-                }
-                if (direction === "down" && pos < arr.length - 1) {
-                    [arr[pos], arr[pos + 1]] = [arr[pos + 1], arr[pos]];
-                }
-                // Update votes for the item
-                arr[pos].votes = newVotes;
-                // Bulk update all items to preserve new order
-                arr.forEach(itemObj => {
-                    updates[itemObj.id] = { name: itemObj.name, votes: itemObj.votes };
-                });
-                listRef.set(updates);
+                // Only update votes for this specific item
+                listRef.child(item.id).update({ votes: newVotes });
             } else {
                 alert("You have already voted for this item.");
             }
@@ -176,6 +163,7 @@
             const item = window.list[index];
             if (item.votes.includes(voterName)) {
                 const newVotes = item.votes.filter(v => v !== voterName);
+                // Only update votes for this specific item
                 listRef.child(item.id).update({ votes: newVotes });
             } else {
                 alert("You haven't voted for this item.");
@@ -192,17 +180,23 @@
         function renderList() {
             const listElement = document.getElementById("list");
             listElement.innerHTML = "";
-            (window.list || []).forEach((item, index) => {
+
+            // Sort by votes, descending (most votes first)
+            const sortedList = (window.list || []).slice().sort((a, b) => {
+                return (b.votes.length) - (a.votes.length);
+            });
+
+            sortedList.forEach((item) => {
                 const votesArr = Array.isArray(item.votes) ? item.votes : [];
+                const originalIndex = window.list.findIndex(i => i.id === item.id);
                 const listItem = document.createElement("li");
                 listItem.classList.add("list-item");
                 listItem.innerHTML = `
                     <span class="item-name">${item.name}</span>
                     <div class="buttons">
-                        <button onclick="vote(${index}, 'up')">⬆️</button>
-                        <button onclick="vote(${index}, 'down')">⬇️</button>
-                        <button onclick="removeVote(${index})">❌ Remove Vote</button>
-                        <button onclick="removeItem(${index})">🗑️ Delete Item</button>
+                        <button onclick="vote(${originalIndex})">⬆️ Vote</button>
+                        <button onclick="removeVote(${originalIndex})">❌ Remove Vote</button>
+                        <button onclick="removeItem(${originalIndex})">🗑️ Delete Item</button>
                     </div>
                     <span class="votes">Votes: ${votesArr.join(", ")}</span>
                 `;
